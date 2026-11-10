@@ -1,0 +1,46 @@
+model:
+  backbone: swin_tiny_patch4_window7_224
+  embed_dim: 128
+  num_classes: 2
+  num_ssm_blocks: 2
+  d_state: 16
+  expand: 2
+  backbone_pretrained: true
+
+data:
+  root: /home/b23cs1037/cv_project/data/oxford_pet
+  splits_dir: /home/b23cs1037/cv_project/data/splits
+  image_size: 512
+  ignore_index: 255
+  num_workers: 4
+
+training:
+  batch_size: 8
+  epochs: 80
+  optimizer: adamw
+  backbone_lr: 6.0e-5
+  decoder_lr: 6.0e-4
+  weight_decay: 0.01
+  scheduler: cosine
+  warmup_epochs: 5
+  clip_grad_norm: 1.0
+  amp: true
+  loss_weights:
+    ce: 1.0
+    dice: 1.0
+    edge: 0.0    # no edge loss for vanilla baseline
+  augmentation:
+    random_resized_crop: true
+    crop_scale: [0.5, 2.0]
+    h_flip: 0.5
+    color_jitter: [0.4, 0.4, 0.4, 0.1]
+    color_jitter_prob: 0.8
+    grayscale_prob: 0.1
+
+logging:
+  runs_dir: /DATA1/b23cs1037/cv
+  log_interval: 20
+  vis_interval: 5
+  save_interval: 10
+  num_vis_samples: 8
+

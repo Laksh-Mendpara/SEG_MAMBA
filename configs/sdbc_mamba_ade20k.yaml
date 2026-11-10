@@ -1,0 +1,50 @@
+model:
+  backbone: swin_base_patch4_window12_384  # Swin-B with ImageNet-22K pretraining
+  embed_dim: 256                           # Wider decoder for 150-way classification
+  num_classes: 150                         # ADE20K semantic categories (0–149)
+  num_ssm_blocks: 2                        # 2 blocks; 512² sequence length is manageable
+  d_state: 16                              # SSM hidden state dimension
+  expand: 2                                # D = expand × embed_dim
+  backbone_pretrained: true
+
+data:
+  dataset: ade20k                          # ← dataset selector
+  root: /DATA1/b23cs1037/cv/data/ade20k
+  image_size: 512                          # Standard ADE20K resolution
+  ignore_index: 255                        # Unlabelled pixels (original 0) → 255
+  num_workers: 6
+
+training:
+  batch_size: 8                            # 512² fits 8 per batch on 48GB VRAM
+  epochs: 45                               # 45 epochs (~113.6K iterations, optimal for Swin-B)
+  optimizer: adamw
+  backbone_lr: 6.0e-5
+  decoder_lr: 6.0e-4
+  weight_decay: 0.01
+  scheduler: cosine
+  warmup_epochs: 4
+  clip_grad_norm: 1.0
+  amp: true                                # Native BFloat16 on Ampere RTX A6000
+
+  loss_weights:
+    ce: 1.0
+    dice: 0.5                              # Balanced Dice loss with present-class filtering
+    edge: 0.2                              # Auxiliary boundary supervision
+
+  augmentation:
+    random_resized_crop: true
+    crop_scale: [0.5, 2.0]                 # Multi-scale crops for varied object sizes
+    h_flip: 0.5
+    random_rotation: false
+    color_jitter: [0.4, 0.4, 0.4, 0.1]
+    color_jitter_prob: 0.8
+    grayscale_prob: 0.1
+
+logging:
+  runs_dir: /DATA1/b23cs1037/cv
+  log_interval: 50                         # 20K train images → log every 50 batches
+  vis_interval: 5                          # Save visualizations every 5 epochs
+  save_interval: 5                         # Periodic checkpoint every 5 epochs
+  num_vis_samples: 8
+  wandb: true
+  wandb_project: cv_ade20k
